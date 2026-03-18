@@ -393,20 +393,7 @@ function openObs(){
 function goBack(){
   if(S.cur==='obs'){const o=document.getElementById('obs-main');if(o)S.obsG=o.value;}
   if(S.scr==='check'){renderList();show('list');}
-  else{
-async function getDigest() {
-  try {
-    const r = await fetch('https://secilonline.sharepoint.com/sites/OUTPCPEstatstica/_api/contextinfo', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Accept': 'application/json;odata=verbose' }
-    });
-    const d = await r.json();
-    return d.d.GetContextWebInformation.FormDigestValue;
-  } catch(e) { return ''; }
-}
-
-show('home');}
+  else{show('home');}
 }
 function trySubmit(){
   const done=EQS.filter(e=>isDone(e.id)).length;
@@ -442,32 +429,8 @@ function trySubmit(){
     obsGeral:S.obsG
   };
 
-  // Send to SharePoint List
-  const spUrl = 'https://secilonline.sharepoint.com/sites/OUTPCPEstatstica/_api/web/lists/getbytitle(\'Circuitos Vigilncia\')/items';
-  const spBody = {
-    '__metadata': { 'type': 'SP.Data.Circuitos_x0020_Vigil_x00e3_nciaListItem' },
-    'Title': now,
-    'Equipa': payload.equipa,
-    'Colaborador': payload.colaborador,
-    'Turno': payload.turno,
-    'Horario': payload.turnoLabel,
-    'Modo': payload.modo,
-    'Verificados': payload.equipamentosDone,
-    'NOK': payload.nokCount,
-    'Urgente': payload.urgenteCount,
-    'Anomalias': payload.anomalias,
-    'Observacoes': payload.obsGeral
-  };
-  fetch(spUrl, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Accept': 'application/json;odata=verbose',
-      'Content-Type': 'application/json;odata=verbose',
-      'X-RequestDigest': await getDigest()
-    },
-    body: JSON.stringify(spBody)
-  }).then(r => console.log('SP OK:', r.status)).catch(e => console.log('SP error:', e));
+  // Send to SharePoint
+  enviarParaSharePoint(payload, now);
 
   // Show summary
   const nc=nok>0||urg>0?'red':'green';
@@ -488,32 +451,38 @@ function novaRonda(){
   document.getElementById('inp-colab').value='';
   var ts=document.getElementById('inp-turno');if(ts)ts.value='';
   selModo('parado');
-  
+  show('home');
+}
+
 async function getDigest() {
   try {
-    const r = await fetch('https://secilonline.sharepoint.com/sites/OUTPCPEstatstica/_api/contextinfo', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Accept': 'application/json;odata=verbose' }
-    });
+    const r = await fetch('https://secilonline.sharepoint.com/sites/OUTPCPEstatstica/_api/contextinfo',{method:'POST',credentials:'include',headers:{'Accept':'application/json;odata=verbose'}});
     const d = await r.json();
     return d.d.GetContextWebInformation.FormDigestValue;
   } catch(e) { return ''; }
 }
 
-show('home');
-}
-
-async function getDigest() {
+async function enviarParaSharePoint(payload, timestamp) {
   try {
-    const r = await fetch('https://secilonline.sharepoint.com/sites/OUTPCPEstatstica/_api/contextinfo', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Accept': 'application/json;odata=verbose' }
+    const digest = await getDigest();
+    const spUrl = 'https://secilonline.sharepoint.com/sites/OUTPCPEstatstica/_api/web/lists/getbytitle(\'Circuitos Vigilncia\')/items';
+    const body = JSON.stringify({
+      '__metadata':{'type':'SP.Data.Circuitos_x0020_Vigil_x00e3_nciaListItem'},
+      'Title': timestamp,
+      'Equipa': payload.equipa,
+      'Colaborador': payload.colaborador,
+      'Turno': payload.turno,
+      'Horario': payload.turnoLabel,
+      'Modo': payload.modo,
+      'Verificados': payload.equipamentosDone,
+      'NOK': payload.nokCount,
+      'Urgente': payload.urgenteCount,
+      'Anomalias': payload.anomalias,
+      'Observacoes': payload.obsGeral
     });
-    const d = await r.json();
-    return d.d.GetContextWebInformation.FormDigestValue;
-  } catch(e) { return ''; }
+    const r = await fetch(spUrl,{method:'POST',credentials:'include',headers:{'Accept':'application/json;odata=verbose','Content-Type':'application/json;odata=verbose','X-RequestDigest':digest},body:body});
+    console.log('SharePoint OK:', r.status);
+  } catch(e) { console.log('SharePoint erro:', e); }
 }
 
 show('home');
