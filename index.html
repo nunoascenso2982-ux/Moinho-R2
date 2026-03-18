@@ -151,20 +151,12 @@ select.f-input{cursor:pointer}
     </div>
     <div class="form-section">
       <div class="f-label">Turno</div>
-      <div class="turno-grid">
-        <div class="turno-card" onclick="selTurno('T1','00h00 – 08h00',this)">
-          <div class="turno-hora">T1</div>
-          <div class="turno-lbl">00h – 08h</div>
-        </div>
-        <div class="turno-card" onclick="selTurno('T2','08h00 – 16h00',this)">
-          <div class="turno-hora">T2</div>
-          <div class="turno-lbl">08h – 16h</div>
-        </div>
-        <div class="turno-card" onclick="selTurno('T3','16h00 – 24h00',this)">
-          <div class="turno-hora">T3</div>
-          <div class="turno-lbl">16h – 24h</div>
-        </div>
-      </div>
+      <select class="f-input" id="inp-turno" onchange="selTurnoSelect(this.value)">
+        <option value="">Selecionar turno...</option>
+        <option value="T1|00h00 – 08h00">T1 &mdash; 00h00 às 08h00</option>
+        <option value="T2|08h00 – 16h00">T2 &mdash; 08h00 às 16h00</option>
+        <option value="T3|16h00 – 24h00">T3 &mdash; 16h00 às 24h00</option>
+      </select>
     </div>
     <div class="form-section">
       <div class="f-label">Estado do moinho</div>
@@ -274,9 +266,12 @@ let S={eq:'',col:'',turno:'',turnoL:'',modo:'parado',resp:{},obsG:'',cur:null,sc
 
 function selTurno(id,lbl,el){
   S.turno=id;S.turnoL=lbl;
-  document.querySelectorAll('.turno-card').forEach(c=>c.classList.remove('sel'));
-  var card = el.closest ? el.closest('.turno-card') : el;
-  if(card) card.classList.add('sel');
+}
+function selTurnoSelect(val){
+  if(!val) return;
+  var parts = val.split('|');
+  S.turno = parts[0];
+  S.turnoL = parts[1]||'';
 }
 function selModo(m){
   S.modo=m;
@@ -438,7 +433,6 @@ function trySubmit(){
   try {
     fetch('https://default6dfb2d2b090c43c1b20f6d60ced738.86.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bf36d1e26a644044b37ac0c49e712316/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kGE15BWjZCJuquK0xKA5nkATtyvsUC6HtIywZpndogs',{method:'POST',mode:'no-cors',body:JSON.stringify(payload)});
   } catch(e){ console.log('PA error:',e); }
-  }
 
   // Show summary
   const nc=nok>0||urg>0?'red':'green';
@@ -457,7 +451,7 @@ function novaRonda(){
   S={eq:'',col:'',turno:'',turnoL:'',modo:'parado',resp:{},obsG:'',cur:null,scr:'home'};
   document.getElementById('inp-equipa').value='';
   document.getElementById('inp-colab').value='';
-  document.querySelectorAll('.turno-card').forEach(c=>c.classList.remove('sel'));
+  var ts=document.getElementById('inp-turno');if(ts)ts.value='';
   selModo('parado');
   show('home');
 }
