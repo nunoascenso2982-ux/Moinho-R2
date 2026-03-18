@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Circuito de Vigilância — Moinho R2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a1a;font-size:15px;min-height:100vh}
+.wrap{max-width:480px;margin:0 auto;background:#fff;min-height:100vh;display:flex;flex-direction:column}
+/* TOPBAR */
+.topbar{background:#1a5ca8;color:#fff;padding:14px 16px 10px;position:sticky;top:0;z-index:50}
+.tb-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.back-btn{background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tb-title{font-size:16px;font-weight:600;flex:1}
+.tb-sub{font-size:11px;opacity:.8}
+.prog-wrap{background:rgba(255,255,255,.25);border-radius:10px;height:5px;margin-top:7px}
+.prog-bar{height:5px;background:#fff;border-radius:10px;transition:width .4s}
+.prog-lbl{font-size:10px;opacity:.8;margin-top:3px;text-align:right}
+/* SCREENS */
+.screen{display:none;flex-direction:column;flex:1}
+.screen.active{display:flex}
+/* HOME */
+.home-top{padding:24px 18px 16px;background:linear-gradient(135deg,#1a5ca8,#0e3d73);color:#fff}
+.home-logo{font-size:11px;font-weight:600;letter-spacing:.08em;opacity:.8;margin-bottom:8px}
+.home-title{font-size:22px;font-weight:700;margin-bottom:4px}
+.home-sub{font-size:13px;opacity:.75}
+.form-section{padding:16px 18px;border-bottom:1px solid #eee}
+.f-label{font-size:11px;font-weight:600;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.f-input{width:100%;padding:11px 13px;border:1.5px solid #ddd;border-radius:9px;font-size:14px;background:#fff;color:#1a1a1a;font-family:inherit;transition:border-color .2s}
+.f-input:focus{outline:none;border-color:#1a5ca8}
+select.f-input{cursor:pointer}
+.turno-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.turno-card{padding:12px 6px;border:2px solid #ddd;border-radius:10px;text-align:center;cursor:pointer;transition:all .18s;background:#fff}
+.turno-card:active{opacity:.85}
+.turno-card.sel{border-color:#1a5ca8;background:#e8f0fb}
+.turno-hora{font-size:15px;font-weight:700;color:#1a1a1a}
+.turno-card.sel .turno-hora{color:#1a5ca8}
+.turno-lbl{font-size:10px;color:#888;margin-top:2px}
+.turno-card.sel .turno-lbl{color:#1a5ca8}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mode-card{padding:11px;border:2px solid #ddd;border-radius:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:500;transition:all .18s}
+.mode-card.sel{border-color:#1a5ca8;background:#e8f0fb;color:#1a5ca8}
+.start-btn{margin:18px;padding:15px;background:#1a5ca8;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:.02em}
+.start-btn:active{opacity:.9}
+.home-note{padding:0 18px 20px;font-size:11px;color:#999;text-align:center}
+/* LIST */
+.eq-list{flex:1;overflow-y:auto}
+.eq-item{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .1s}
+.eq-item:active{background:#f7f9ff}
+.eq-num{width:32px;height:32px;border-radius:8px;background:#e8f0fb;color:#1a5ca8;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.eq-num.done-ok{background:#e0f5ee;color:#0d7a50}
+.eq-num.done-nok{background:#fde8e8;color:#c0392b}
+.eq-num.done-urg{background:#fef0e0;color:#c07000}
+.eq-info{flex:1;min-width:0}
+.eq-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a1a}
+.eq-pts{font-size:11px;color:#999;margin-top:2px}
+.status-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.status-dot.ok{background:#1DB87A}
+.status-dot.nok{background:#e74c3c}
+.status-dot.urg{background:#e67e22}
+.status-dot.pend{background:#ddd}
+.eq-arr{color:#ccc;font-size:18px;font-weight:300}
+.list-footer{padding:12px 18px;border-top:1px solid #eee;background:#fff}
+.submit-btn{width:100%;padding:14px;background:#1a5ca8;color:#fff;border:none;border-radius:11px;font-size:15px;font-weight:600;cursor:pointer}
+.submit-btn:active{opacity:.9}
+/* CHECK */
+.chk-header{padding:14px 18px;border-bottom:1px solid #eee;background:#fff}
+.chk-title{font-size:16px;font-weight:700;color:#1a1a1a}
+.chk-sub{font-size:11px;color:#999;margin-top:3px}
+.chk-body{flex:1;overflow-y:auto;padding:14px 18px 90px}
+.grp-title{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.08em;margin:12px 0 8px}
+.chk-item{background:#f7f8fa;border-radius:10px;padding:12px 14px;margin-bottom:8px;border:1.5px solid #eee}
+.chk-item.has-issue{border-color:#e74c3c;background:#fff8f8}
+.chk-item.has-urg{border-color:#e67e22;background:#fff9f0}
+.item-label{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:10px;line-height:1.3}
+.btn-row{display:flex;gap:7px}
+.v-btn{flex:1;padding:9px 5px;border:2px solid #ddd;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#fff;transition:all .15s;text-align:center;letter-spacing:.03em}
+.v-btn:active{opacity:.85}
+.v-btn.ok.sel{background:#e0f5ee;border-color:#1DB87A;color:#0d7a50}
+.v-btn.nok.sel{background:#fde8e8;border-color:#e74c3c;color:#c0392b}
+.v-btn.urg.sel{background:#fef0e0;border-color:#e67e22;color:#c07000}
+.v-obs{width:100%;margin-top:9px;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;font-size:12px;font-family:inherit;background:#fff;resize:none;height:60px;color:#1a1a1a}
+.v-obs:focus{outline:none;border-color:#1a5ca8}
+.obs-area{width:100%;padding:11px 13px;border:1.5px solid #ddd;border-radius:9px;font-size:13px;font-family:inherit;background:#fff;resize:none;min-height:160px;color:#1a1a1a;margin-top:4px}
+.obs-area:focus{outline:none;border-color:#1a5ca8}
+.chk-footer{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #eee;padding:10px 18px;display:flex;gap:8px}
+.f-back{flex:1;padding:12px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;cursor:pointer;background:#fff;color:#555;font-weight:500}
+.f-save{flex:2;padding:12px;background:#1a5ca8;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+/* DONE */
+.done-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 24px;text-align:center}
+.done-icon{width:72px;height:72px;border-radius:50%;background:#e0f5ee;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.done-icon svg{width:36px;height:36px}
+.done-title{font-size:22px;font-weight:700;margin-bottom:8px}
+.done-sub{font-size:14px;color:#666;line-height:1.6;margin-bottom:24px}
+.sum-box{width:100%;background:#f7f8fa;border-radius:12px;padding:16px;margin-bottom:24px;text-align:left;border:1px solid #eee}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;border-bottom:1px solid #eee}
+.sum-row:last-child{border:none}
+.sum-lbl{color:#888}
+.sum-val{font-weight:600;color:#1a1a1a}
+.sum-val.red{color:#c0392b}
+.sum-val.amber{color:#c07000}
+.sum-val.green{color:#0d7a50}
+.new-ronda-btn{width:100%;padding:15px;background:#1a5ca8;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer}
+/* SENDING */
+.sending{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:#888;margin-top:8px}
+.spinner{width:16px;height:16px;border:2px solid #ddd;border-top-color:#1a5ca8;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Alert banner */
+.alert-banner{background:#fef0e0;border:1px solid #f0a500;border-radius:9px;padding:10px 13px;margin-bottom:10px;font-size:12px;color:#7a4f00;display:flex;gap:8px;align-items:flex-start}
+.alert-banner.red{background:#fde8e8;border-color:#e74c3c;color:#7a1a1a}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- TOPBAR -->
+  <div class="topbar" id="topbar" style="display:none">
+    <div class="tb-row">
+      <button class="back-btn" onclick="goBack()">&#8592;</button>
+      <div>
+        <div class="tb-title" id="tb-title">Moinho R2</div>
+        <div class="tb-sub" id="tb-sub">—</div>
+      </div>
+    </div>
+    <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+    <div class="prog-lbl" id="prog-lbl">0 / 0</div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen active" id="s-home">
+    <div class="home-top">
+      <div class="home-logo">SECIL — CIRCUITO DE VIGILÂNCIA</div>
+      <div class="home-title">Moinho R2</div>
+      <div class="home-sub">Preencha os dados antes de iniciar a ronda de vigilância</div>
+    </div>
+    <div class="form-section">
+      <div class="f-label">Equipa</div>
+      <select class="f-input" id="inp-equipa">
+        <option value="">Selecionar equipa...</option>
+        <option>Equipa A</option>
+        <option>Equipa B</option>
+        <option>Equipa C</option>
+        <option>Equipa D</option>
+        <option>Equipa E</option>
+      </select>
+    </div>
+    <div class="form-section">
+      <div class="f-label">Colaborador</div>
+      <input class="f-input" id="inp-colab" placeholder="Nome completo" autocomplete="name">
+    </div>
+    <div class="form-section">
+      <div class="f-label">Turno</div>
+      <div class="turno-grid">
+        <div class="turno-card" onclick="selTurno('T1','00h00 – 08h00',this)">
+          <div class="turno-hora">T1</div>
+          <div class="turno-lbl">00h – 08h</div>
+        </div>
+        <div class="turno-card" onclick="selTurno('T2','08h00 – 16h00',this)">
+          <div class="turno-hora">T2</div>
+          <div class="turno-lbl">08h – 16h</div>
+        </div>
+        <div class="turno-card" onclick="selTurno('T3','16h00 – 24h00',this)">
+          <div class="turno-hora">T3</div>
+          <div class="turno-lbl">16h – 24h</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="f-label">Estado do moinho</div>
+      <div class="mode-grid">
+        <div class="mode-card sel" id="m-parado" onclick="selModo('parado')">&#9646; Parado</div>
+        <div class="mode-card" id="m-movimento" onclick="selModo('movimento')">&#9654; Movimento</div>
+      </div>
+    </div>
+    <button class="start-btn" onclick="startRonda()">Iniciar Ronda &#8594;</button>
+    <div class="home-note">43 equipamentos &middot; Moinho R2 + Silos CF + Alimenta&ccedil;&atilde;o W9</div>
+  </div>
+
+  <!-- LIST -->
+  <div class="screen" id="s-list">
+    <div class="eq-list" id="eq-list"></div>
+    <div class="list-footer">
+      <button class="submit-btn" onclick="trySubmit()">Submeter Ronda</button>
+    </div>
+  </div>
+
+  <!-- CHECK -->
+  <div class="screen" id="s-check">
+    <div class="chk-header">
+      <div class="chk-title" id="chk-title">—</div>
+      <div class="chk-sub" id="chk-sub">—</div>
+    </div>
+    <div class="chk-body" id="chk-body"></div>
+    <div class="chk-footer">
+      <button class="f-back" onclick="goBack()">&#8592; Voltar</button>
+      <button class="f-save" onclick="saveEq()">Guardar &#10003;</button>
+    </div>
+  </div>
+
+  <!-- DONE -->
+  <div class="screen" id="s-done">
+    <div class="done-screen">
+      <div class="done-icon">
+        <svg viewBox="0 0 36 36" fill="none" stroke="#1DB87A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="18" cy="18" r="16"/>
+          <polyline points="10,18 15,24 26,12"/>
+        </svg>
+      </div>
+      <div class="done-title">Ronda submetida!</div>
+      <div class="done-sub">Os dados foram guardados no Google Sheets e o email foi enviado ao responsável de turno.</div>
+      <div class="sum-box" id="sum-box"></div>
+      <button class="new-ronda-btn" onclick="novaRonda()">&#43; Nova Ronda</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// CONFIGURAÇÃO — altere estes valores
+// ============================================================
+const POWERAUTOMATE_URL = "https://default6dfb2d2b090c43c1b20f6d60ced738.86.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bf36d1e26a644044b37ac0c49e712316/triggers/manual/paths/invoke?api-version=1";
+// Cole aqui o URL do HTTP trigger do Power Automate
+// ============================================================
+
+const EQS = [
+  {id:1,n:"1. Alimentação ao Moinho",pts:[{l:"Dosimat R2A01 — Proteções coletivas"},{l:"Dosimat R2A01 — Estado da cinta"},{l:"Dosimat R2A01 — Roletes"},{l:"Dosimat R2A01 — Toldas encrustadas"},{l:"Dosimat R2A02 — Proteções coletivas"},{l:"Dosimat R2A02 — Estado da cinta"},{l:"Dosimat R2A02 — Roletes"},{l:"Dosimat R2A02 — Toldas encrustadas"},{l:"Dosimat R2A03 — Proteções coletivas"},{l:"Dosimat R2A03 — Estado da cinta"},{l:"Dosimat R2A03 — Roletes"},{l:"Dosimat R2A03 — Toldas encrustadas"},{l:"Dosimat R2A04 — Proteções coletivas"},{l:"Dosimat R2A04 — Estado da cinta"},{l:"Dosimat R2A04 — Roletes"},{l:"Dosimat R2A04 — Toldas encrustadas"}],u:false,obs:true},
+  {id:2,n:"2. Cinta R2A05",pts:[{l:"Redutor / Acoplamento / Vibração"},{l:"Raspador / Roletes"},{l:"Proteções Coletivas (Resguardos)"},{l:"Tela / borrachas laterais"},{l:"Proteções Coletivas 2"},{l:"Tolda / Limpeza Geral / Despoeiramento"}],u:false,obs:true},
+  {id:3,n:"3. Motorização / Transmissão R2A05",pts:[{l:"Proteções Coletivas (Resguardos)"}],u:false,obs:false},
+  {id:4,n:"4. Cinta de lâminas R2C01",pts:[{l:"Redutor / Acoplamento / Vibração"},{l:"Proteções Coletivas (Resguardos)"},{l:"Tolda / Limpeza Geral / Despoeiramento"}],u:false,obs:true},
+  {id:5,n:"5. Apanha migalhas R2C02",pts:[{l:"Redutor / Acoplamento / Vibração"},{l:"Barras e corrente"}],u:false,obs:true},
+  {id:6,n:"6. Cinta R2C03",pts:[{l:"Redutor / Acoplamento / Vibração"},{l:"Raspador / Roletes"},{l:"Proteções Coletivas (Resguardos)"},{l:"Tela / borrachas laterais"},{l:"Proteções Coletivas 2"},{l:"Tolda / Limpeza Geral / Despoeiramento"},{l:"Balança limpa"}],u:false,obs:true},
+  {id:7,n:"7. Alimentação areia — Dosimat R2E01",pts:[{l:"Proteções coletivas — Sim/Não"},{l:"Estado da cinta"},{l:"Roletes"},{l:"Toldas encrustadas"}],u:false,obs:true},
+  {id:8,n:"7. Alimentação areia — Cinta R2E02",pts:[{l:"Redutor / Acoplamento / Vibração"},{l:"Raspador / Roletes"},{l:"Proteções Coletivas (Resguardos)"},{l:"Tela / borrachas laterais"},{l:"Tolda / Limpeza Geral / Despoeiramento"}],u:false,obs:true},
+  {id:9,n:"8. Filtro R2P81",pts:[{l:"Fugas de Ar"},{l:"Batimentos"},{l:"Entradas de Ar Falso"}],u:false,obs:false},
+  {id:10,n:"8. Eclusa R2P01M2",pts:[{l:"Vedação / Fugas"}],u:false,obs:false},
+  {id:11,n:"8. Ventilador R2P01M3",pts:[{l:"Vibração / Acoplamento"},{l:"Vedação"},{l:"Proteções Coletivas (Resguardos)"}],u:false,obs:false},
+  {id:12,n:"9. Filtro R2P13",pts:[{l:"Fugas de Ar"},{l:"Batimentos"},{l:"Entradas de Ar Falso"}],u:false,obs:false},
+  {id:13,n:"9. R2P13M1",pts:[{l:"Vibração / Acoplamento"},{l:"Vedação"},{l:"Proteções Coletivas (Resguardos)"}],u:false,obs:false},
+  {id:14,n:"9. R2A02 Cinta magnética",pts:[{l:"Caixote cheio"},{l:"Tela"},{l:"Motorização / redutor"},{l:"Proteções Coletivas (Resguardos)"}],u:false,obs:true},
+  {id:15,n:"9. Cinta R2A06",pts:[{l:"Redutor / Acoplamento / Vibração"},{l:"Raspador / Roletes"},{l:"Proteções Coletivas (Resguardos)"},{l:"Tela / borrachas laterais"},{l:"Proteções Coletivas 2"}],u:false,obs:true},
+  {id:16,n:"10. Cinta R2A07",pts:[{l:"Tolda / Limpeza Geral / Despoeiramento"},{l:"Redutor / Acoplamento / Vibração"},{l:"Raspador / Roletes"},{l:"Proteções Coletivas (Resguardos)"},{l:"Tela / borrachas laterais"},{l:"Proteções Coletivas 2"}],u:false,obs:true},
+  {id:17,n:"11. R2A08",pts:[{l:"Motorização / redutor"},{l:"Proteções Coletivas (Resguardos)"},{l:"Portas abertas"},{l:"Blasters da tolda (identificar avariados)"}],u:true,obs:true},
+  {id:18,n:"12. R2M20 Separador",pts:[{l:"Vibração"},{l:"Ruídos anormais"},{l:"Proteções coletivas"},{l:"Motorização / redutor"}],u:false,obs:false},
+  {id:19,n:"R2M21/22 Ventilador, bomba óleo",pts:[{l:"Fugas óleo"},{l:"Vibrações"},{l:"Proteções coletivas"}],u:true,obs:false},
+  {id:20,n:"13. R2P61 Filtro",pts:[{l:"Vibração / Acoplamento"},{l:"Vedação"},{l:"Proteções Coletivas (Resguardos)"}],u:false,obs:false},
+  {id:21,n:"14. Elevador R2A14",pts:[{l:"Vibração / Acoplamento"},{l:"Fuga de Material"},{l:"Proteções Coletivas (Resguardos)"},{l:"Tolda / Limpeza Geral / Despoeiramento"}],u:false,obs:false},
+  {id:22,n:"15. Cinta R2A15",pts:[{l:"Redutor / Acoplamento / Vibração"},{l:"Raspador / Roletes"},{l:"Proteções Coletivas (Resguardos)"},{l:"Tela / borrachas laterais"},{l:"Proteções Coletivas 2"},{l:"Tolda / Limpeza Geral / Despoeiramento"}],u:false,obs:true},
+  {id:23,n:"16. R2M10 Ar de limpeza das mós",pts:[{l:"Redutor / Acoplamento / Vibração"},{l:"Estado da filtrina"},{l:"Proteções Coletivas (Resguardos)"}],u:false,obs:false},
+  {id:24,n:"17. Vibratoria R2A11",pts:[{l:"Juntas rotas"},{l:"Molas partidas"},{l:"Fuga de material"}],u:false,obs:false},
+  {id:25,n:"18. Vibratoria R2A12",pts:[{l:"Juntas rotas"},{l:"Molas partidas"},{l:"Fuga de material"}],u:false,obs:false},
+  {id:26,n:"19. Cinta rejeitados R2A13",pts:[{l:"Redutor / Acoplamento / Vibração"},{l:"Raspador / Roletes"},{l:"Proteções Coletivas (Resguardos)"},{l:"Tela / borrachas laterais"},{l:"Proteções Coletivas 2"},{l:"Tolda / Limpeza Geral / Despoeiramento"}],u:false,obs:true},
+  {id:27,n:"20. R2A13M2 Tambor magnético",pts:[{l:"Caixote cheio"},{l:"Tela"},{l:"Motorização / redutor"}],u:false,obs:false},
+  {id:28,n:"21. Filtro R2P31",pts:[{l:"Vibração / Acoplamento"},{l:"Vedação"},{l:"Proteções Coletivas (Resguardos)"}],u:false,obs:false},
+  {id:29,n:"21. Eclusa R2P31M2",pts:[{l:"Vedação / Fugas"},{l:"Motorização / Transmissão"},{l:"Proteções Coletivas (Resguardos)"}],u:false,obs:false},
+  {id:30,n:"21. Ventilador R2P31M1",pts:[{l:"Vibração / Acoplamento"},{l:"Vedação"},{l:"Proteções Coletivas (Resguardos)"}],u:false,obs:false},
+  {id:31,n:"22. R2A18",pts:[{l:"Redutor / Acoplamento / Vibração"},{l:"Raspador / Roletes"},{l:"Proteções Coletivas (Resguardos)"},{l:"Tela / borrachas laterais"},{l:"Proteções Coletivas 2"},{l:"Tolda / Limpeza Geral / Despoeiramento"}],u:false,obs:true},
+  {id:32,n:"23. R2A17",pts:[{l:"Redutor / Acoplamento / Vibração"},{l:"Raspador / Roletes"},{l:"Proteções Coletivas (Resguardos)"},{l:"Tela / borrachas laterais"},{l:"Proteções Coletivas 2"},{l:"Tolda / Limpeza Geral / Despoeiramento"}],u:false,obs:true},
+  {id:33,n:"24. Estação lubrificação redutor R2",pts:[{l:"Bomba R2M15M1 — Vibração"},{l:"Bomba R2M15M1 — Fuga óleo"},{l:"Bomba R2M15M2 — Vibração"},{l:"Bomba R2M15M2 — Fuga óleo"},{l:"Bomba R2M15M3 — Vibração"},{l:"Bomba R2M15M3 — Fuga óleo"},{l:"Fugas de óleo depósito"},{l:"Nível de óleo do depósito"}],u:false,obs:false},
+  {id:34,n:"Lubrificação das mós",pts:[{l:"Nível"},{l:"Fugas de óleo"}],u:false,obs:false},
+  {id:35,n:"R2M07 Pressão de moagem",pts:[{l:"Fugas de óleo"},{l:"Vibração motor"},{l:"Nível de óleo"}],u:false,obs:false},
+  {id:36,n:"R2M08/M09 Bomba água e válvula controlo",pts:[{l:"Fugas de água"},{l:"Vibrações"},{l:"Proteções Coletivas (Resguardos)"}],u:false,obs:false},
+  {id:37,n:"Silo CF — Saída A",pts:[{l:"Caudal de farinha"},{l:"Cilindro Pneu."},{l:"Registo"},{l:"Filtros"},{l:"Válvula de Comando"},{l:"Fugas de Farinha"}],u:true,obs:false},
+  {id:38,n:"Silo CF — Saída B",pts:[{l:"Caudal de farinha"},{l:"Cilindro Pneu."},{l:"Registo"},{l:"Filtros"},{l:"Válvula de Comando"},{l:"Fugas de Farinha"}],u:true,obs:false},
+  {id:39,n:"Silo CF — Saída C",pts:[{l:"Caudal de farinha"},{l:"Cilindro Pneu."},{l:"Registo"},{l:"Filtros"},{l:"Válvula de Comando"},{l:"Fugas de Farinha"}],u:true,obs:false},
+  {id:40,n:"Silo CF — Saída D",pts:[{l:"Caudal de farinha"},{l:"Cilindro Pneu."},{l:"Registo"},{l:"Filtros"},{l:"Válvula de Comando"},{l:"Fugas de Farinha"}],u:true,obs:false},
+  {id:41,n:"Silo CF — Saída E",pts:[{l:"Caudal de farinha"},{l:"Cilindro Pneu."},{l:"Registo"},{l:"Filtros"},{l:"Válvula de Comando"},{l:"Fugas de Farinha"}],u:true,obs:false},
+  {id:42,n:"Silo CF — Saída F",pts:[{l:"Caudal de farinha"},{l:"Cilindro Pneu."},{l:"Registo"},{l:"Filtros"},{l:"Válvula de Comando"},{l:"Fugas de Farinha"}],u:true,obs:false},
+  {id:43,n:"Silo CF — Saída G",pts:[{l:"Caudal de farinha"},{l:"Cilindro Pneu."},{l:"Registo"},{l:"Filtros"},{l:"Válvula de Comando"},{l:"Fugas de Farinha"}],u:true,obs:false},
+];
+
+let S={eq:'',col:'',turno:'',turnoL:'',modo:'parado',resp:{},obsG:'',cur:null,scr:'home'};
+
+function selTurno(id,lbl,el){
+  S.turno=id;S.turnoL=lbl;
+  document.querySelectorAll('.turno-card').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function selModo(m){
+  S.modo=m;
+  document.getElementById('m-parado').classList.toggle('sel',m==='parado');
+  document.getElementById('m-movimento').classList.toggle('sel',m==='movimento');
+}
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  S.scr=id;
+  document.getElementById('topbar').style.display=id==='home'?'none':'block';
+  updProg();
+}
+function updProg(){
+  const done=EQS.filter(e=>isDone(e.id)).length;
+  const pct=Math.round(done/EQS.length*100);
+  document.getElementById('prog-bar').style.width=pct+'%';
+  document.getElementById('prog-lbl').textContent=done+' / '+EQS.length+' equipamentos';
+  document.getElementById('tb-sub').textContent=S.eq+' · '+S.turno+' ('+S.turnoL+')';
+}
+function isDone(id){
+  const eq=EQS.find(e=>e.id===id);
+  if(!eq||!eq.pts.length) return false;
+  const r=S.resp[id]||{};
+  return eq.pts.every((_,i)=>r[i]&&r[i].v);
+}
+function getStatus(id){
+  const r=S.resp[id]||{};
+  const vals=Object.values(r).filter(x=>x&&x.v).map(x=>x.v);
+  if(vals.includes('urgente')) return 'urg';
+  if(vals.includes('nok')) return 'nok';
+  if(vals.length) return 'ok';
+  return 'pend';
+}
+function startRonda(){
+  if(!document.getElementById('inp-equipa').value){alert('Selecione a equipa.');return;}
+  if(!document.getElementById('inp-colab').value.trim()){alert('Indique o nome do colaborador.');return;}
+  if(!S.turno){alert('Selecione o turno.');return;}
+  S.eq=document.getElementById('inp-equipa').value;
+  S.col=document.getElementById('inp-colab').value.trim();
+  renderList(); show('list');
+}
+function renderList(){
+  const el=document.getElementById('eq-list');
+  el.innerHTML=EQS.map(eq=>{
+    const st=getStatus(eq.id);
+    const done=isDone(eq.id);
+    const nc=done?(st==='ok'?'done-ok':st==='nok'?'done-nok':'done-urg'):'';
+    const dc=done?(st==='ok'?'ok':st==='nok'?'nok':'urg'):'pend';
+    const sl=done?(st==='ok'?' · ✓ OK':st==='nok'?' · ⚠ NOK':' · 🔴 Urgente'):'';
+    return '<div class="eq-item" onclick="openEq('+eq.id+')">'+
+      '<div class="eq-num '+nc+'">'+eq.id+'</div>'+
+      '<div class="eq-info"><div class="eq-name">'+eq.n+'</div>'+
+      '<div class="eq-pts">'+eq.pts.length+' pontos'+sl+'</div></div>'+
+      '<div class="status-dot '+dc+'"></div>'+
+      '<div class="eq-arr">&#8250;</div></div>';
+  }).join('')+
+  '<div class="eq-item" onclick="openObs()">'+
+  '<div class="eq-num" style="background:#f0f0f0;font-size:16px">&#128221;</div>'+
+  '<div class="eq-info"><div class="eq-name">Outras Observações Gerais</div>'+
+  '<div class="eq-pts">Filtros, fugas de ar, iluminação, etc.</div></div>'+
+  '<div class="eq-arr">&#8250;</div></div>';
+}
+function openEq(id){
+  const eq=EQS.find(e=>e.id===id);
+  S.cur=id;
+  document.getElementById('chk-title').textContent=eq.n;
+  document.getElementById('chk-sub').textContent=eq.pts.length+' pontos · Moinho '+S.modo;
+  const r=S.resp[id]||{};
+  let html='<div class="grp-title">Pontos de verificação</div>';
+  eq.pts.forEach((pt,i)=>{
+    const v=(r[i]||{}).v||'';
+    const o=(r[i]||{}).o||'';
+    const cls=v==='nok'?'has-issue':v==='urgente'?'has-urg':'';
+    const urgBtn=eq.u?'<button class="v-btn urg '+(v==='urgente'?'sel':'')+'" onclick="setV('+id+','+i+',\'urgente\')">URGENTE</button>':'';
+    html+='<div class="chk-item '+cls+'" id="ci-'+id+'-'+i+'">'+
+      '<div class="item-label">'+pt.l+'</div>'+
+      '<div class="btn-row">'+
+      '<button class="v-btn ok '+(v==='ok'?'sel':'')+'" onclick="setV('+id+','+i+',\'ok\')">OK</button>'+
+      '<button class="v-btn nok '+(v==='nok'?'sel':'')+'" onclick="setV('+id+','+i+',\'nok\')">NOK</button>'+
+      urgBtn+'</div>'+
+      (v==='nok'||v==='urgente'?'<textarea class="v-obs" id="vo-'+id+'-'+i+'" placeholder="Descreva a anomalia...">'+o+'</textarea>':'')+
+      '</div>';
+  });
+  if(eq.obs){
+    html+='<div class="grp-title" style="margin-top:16px">Observações gerais</div>'+
+    '<textarea class="obs-area" id="oeq-'+id+'" placeholder="Observações sobre este equipamento...">'+(r.oeq||'')+'</textarea>';
+  }
+  document.getElementById('chk-body').innerHTML=html;
+  show('check');
+  window.scrollTo(0,0);
+}
+function setV(id,i,val){
+  if(!S.resp[id]) S.resp[id]={};
+  const prev=(S.resp[id][i]||{}).v;
+  S.resp[id][i]={v:prev===val?'':val,o:''};
+  openEq(id);
+}
+function saveEq(){
+  const id=S.cur;
+  const eq=EQS.find(e=>e.id===id);
+  if(!S.resp[id]) S.resp[id]={};
+  eq.pts.forEach((_,i)=>{
+    const o=document.getElementById('vo-'+id+'-'+i);
+    if(o&&S.resp[id][i]) S.resp[id][i].o=o.value;
+  });
+  if(eq.obs){const o=document.getElementById('oeq-'+id);if(o)S.resp[id].oeq=o.value;}
+  renderList(); updProg(); show('list');
+}
+function openObs(){
+  S.cur='obs';
+  document.getElementById('chk-title').textContent='Observações Gerais';
+  document.getElementById('chk-sub').textContent='Filtros, fugas de ar, iluminação, etc.';
+  document.getElementById('chk-body').innerHTML=
+    '<div class="grp-title">Outras observações gerais</div>'+
+    '<textarea class="obs-area" id="obs-main" style="min-height:240px" placeholder="Ex: filtros entupidos, fugas de ar, problemas de iluminação...">'+S.obsG+'</textarea>';
+  show('check');
+}
+function goBack(){
+  if(S.cur==='obs'){const o=document.getElementById('obs-main');if(o)S.obsG=o.value;}
+  if(S.scr==='check'){renderList();show('list');}
+  else{show('home');}
+}
+function trySubmit(){
+  const done=EQS.filter(e=>isDone(e.id)).length;
+  const nok=EQS.filter(e=>getStatus(e.id)==='nok').length;
+  const urg=EQS.filter(e=>getStatus(e.id)==='urg').length;
+  const now=new Date().toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  // Build summary for Sheets
+  const anomalias=[];
+  EQS.forEach(eq=>{
+    const r=S.resp[eq.id]||{};
+    eq.pts.forEach((pt,i)=>{
+      const v=(r[i]||{}).v;
+      if(v==='nok'||v==='urgente'){
+        anomalias.push({eq:eq.n,ponto:pt.l,estado:v.toUpperCase(),obs:(r[i]||{}).o||''});
+      }
+    });
+  });
+
+  const payload={
+    timestamp:now,
+    equipa:S.eq,
+    colaborador:S.col,
+    turno:S.turno,
+    turnoLabel:S.turnoL,
+    modo:S.modo,
+    dataHora:new Date().toISOString(),
+    equipamentosTotal:EQS.length,
+    equipamentosDone:done,
+    nokCount:nok,
+    urgenteCount:urg,
+    anomalias:JSON.stringify(anomalias),
+    obsGeral:S.obsG
+  };
+
+  // Send to Google Sheets
+  if(POWERAUTOMATE_URL.indexOf('SEU_SCRIPT_ID')===-1){
+    fetch(POWERAUTOMATE_URL,{method:'POST',body:JSON.stringify(payload)})
+      .catch(e=>console.log('Sheets error:',e));
+  }
+
+  // Show summary
+  const nc=nok>0||urg>0?'red':'green';
+  document.getElementById('sum-box').innerHTML=
+    '<div class="sum-row"><span class="sum-lbl">Colaborador</span><span class="sum-val">'+S.col+'</span></div>'+
+    '<div class="sum-row"><span class="sum-lbl">Equipa</span><span class="sum-val">'+S.eq+'</span></div>'+
+    '<div class="sum-row"><span class="sum-lbl">Turno</span><span class="sum-val">'+S.turno+' · '+S.turnoL+'</span></div>'+
+    '<div class="sum-row"><span class="sum-lbl">Estado moinho</span><span class="sum-val">'+S.modo+'</span></div>'+
+    '<div class="sum-row"><span class="sum-lbl">Data / Hora</span><span class="sum-val">'+now+'</span></div>'+
+    '<div class="sum-row"><span class="sum-lbl">Verificados</span><span class="sum-val '+( done===EQS.length?'green':'amber')+'">'+done+' / '+EQS.length+'</span></div>'+
+    '<div class="sum-row"><span class="sum-lbl">Anomalias NOK</span><span class="sum-val '+(nok>0?'red':'green')+'">'+nok+'</span></div>'+
+    '<div class="sum-row"><span class="sum-lbl">Urgentes</span><span class="sum-val '+(urg>0?'red':'green')+'">'+urg+'</span></div>';
+  show('done');
+}
+function novaRonda(){
+  S={eq:'',col:'',turno:'',turnoL:'',modo:'parado',resp:{},obsG:'',cur:null,scr:'home'};
+  document.getElementById('inp-equipa').value='';
+  document.getElementById('inp-colab').value='';
+  document.querySelectorAll('.turno-card').forEach(c=>c.classList.remove('sel'));
+  selModo('parado');
+  show('home');
+}
+show('home');
+</script>
+</body>
+</html>
