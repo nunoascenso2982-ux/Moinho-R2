@@ -393,7 +393,20 @@ function openObs(){
 function goBack(){
   if(S.cur==='obs'){const o=document.getElementById('obs-main');if(o)S.obsG=o.value;}
   if(S.scr==='check'){renderList();show('list');}
-  else{show('home');}
+  else{
+async function getDigest() {
+  try {
+    const r = await fetch('https://secilonline.sharepoint.com/sites/OUTPCPEstatstica/_api/contextinfo', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Accept': 'application/json;odata=verbose' }
+    });
+    const d = await r.json();
+    return d.d.GetContextWebInformation.FormDigestValue;
+  } catch(e) { return ''; }
+}
+
+show('home');}
 }
 function trySubmit(){
   const done=EQS.filter(e=>isDone(e.id)).length;
@@ -429,10 +442,32 @@ function trySubmit(){
     obsGeral:S.obsG
   };
 
-  // Send to Power Automate
-  try {
-    fetch('https://default6dfb2d2b090c43c1b20f6d60ced738.86.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bf36d1e26a644044b37ac0c49e712316/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kGE15BWjZCJuquK0xKA5nkATtyvsUC6HtIywZpndogs',{method:'POST',mode:'no-cors',body:JSON.stringify(payload)});
-  } catch(e){ console.log('PA error:',e); }
+  // Send to SharePoint List
+  const spUrl = 'https://secilonline.sharepoint.com/sites/OUTPCPEstatstica/_api/web/lists/getbytitle(\'Circuitos Vigilncia\')/items';
+  const spBody = {
+    '__metadata': { 'type': 'SP.Data.Circuitos_x0020_Vigil_x00e3_nciaListItem' },
+    'Title': now,
+    'Equipa': payload.equipa,
+    'Colaborador': payload.colaborador,
+    'Turno': payload.turno,
+    'Horario': payload.turnoLabel,
+    'Modo': payload.modo,
+    'Verificados': payload.equipamentosDone,
+    'NOK': payload.nokCount,
+    'Urgente': payload.urgenteCount,
+    'Anomalias': payload.anomalias,
+    'Observacoes': payload.obsGeral
+  };
+  fetch(spUrl, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Accept': 'application/json;odata=verbose',
+      'Content-Type': 'application/json;odata=verbose',
+      'X-RequestDigest': await getDigest()
+    },
+    body: JSON.stringify(spBody)
+  }).then(r => console.log('SP OK:', r.status)).catch(e => console.log('SP error:', e));
 
   // Show summary
   const nc=nok>0||urg>0?'red':'green';
@@ -453,8 +488,34 @@ function novaRonda(){
   document.getElementById('inp-colab').value='';
   var ts=document.getElementById('inp-turno');if(ts)ts.value='';
   selModo('parado');
-  show('home');
+  
+async function getDigest() {
+  try {
+    const r = await fetch('https://secilonline.sharepoint.com/sites/OUTPCPEstatstica/_api/contextinfo', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Accept': 'application/json;odata=verbose' }
+    });
+    const d = await r.json();
+    return d.d.GetContextWebInformation.FormDigestValue;
+  } catch(e) { return ''; }
 }
+
+show('home');
+}
+
+async function getDigest() {
+  try {
+    const r = await fetch('https://secilonline.sharepoint.com/sites/OUTPCPEstatstica/_api/contextinfo', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Accept': 'application/json;odata=verbose' }
+    });
+    const d = await r.json();
+    return d.d.GetContextWebInformation.FormDigestValue;
+  } catch(e) { return ''; }
+}
+
 show('home');
 </script>
 </body>
