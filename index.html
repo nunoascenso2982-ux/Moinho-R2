@@ -433,10 +433,10 @@ function trySubmit(){
     obsGeral:S.obsG
   };
 
-  // Send to Google Sheets
-  if(POWERAUTOMATE_URL.indexOf('https://default6dfb2d2b090c43c1b20f6d60ced738.86.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bf36d1e26a644044b37ac0c49e712316/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kGE15BWjZCJuquK0xKA5nkATtyvsUC6HtIywZpndogs')===-1){
-    fetch(POWERAUTOMATE_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(payload)})
-      .catch(e=>console.log('Sheets error:',e));
+  // Send to Power Automate
+  try {
+    fetch('https://default6dfb2d2b090c43c1b20f6d60ced738.86.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bf36d1e26a644044b37ac0c49e712316/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=kGE15BWjZCJuquK0xKA5nkATtyvsUC6HtIywZpndogs',{method:'POST',mode:'no-cors',body:JSON.stringify(payload)});
+  } catch(e){ console.log('PA error:',e); }
   }
 
   // Show summary
